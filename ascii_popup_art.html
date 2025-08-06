@@ -1,0 +1,501 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ASCII Matrix Art Generator</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Ubuntu+Mono:wght@400;700&display=swap');
+        
+        body {
+            margin: 0;
+            padding: 20px;
+            background-color: #000;
+            font-family: 'Ubuntu Mono', monospace;
+            overflow-x: auto;
+            min-height: 100vh;
+        }
+
+        .matrix-container {
+            position: relative;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0;
+            width: 100%;
+            margin: 0 auto;
+            justify-content: center;
+            align-items: flex-start;
+            padding: 20px;
+            background: #000;
+            overflow-x: auto;
+        }
+
+        .grid-item {
+            font-size: 12px;
+            line-height: 1.2;
+            white-space: pre;
+            background: #000;
+            overflow: hidden;
+            width: fit-content;
+            margin: 0;
+            padding: 0;
+        }
+
+        .matrix-char {
+            color: var(--matrix-color, #0f0);
+        }
+
+        .ascii-char {
+            color: var(--ascii-color, #ff0000);
+            font-weight: bold;
+        }
+
+        .signature {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            color: #fff;
+            font-size: 12px;
+            z-index: 10;
+        }
+
+
+
+        .control-panel {
+            position: fixed;
+            top: 20px;
+            left: 20px;
+            z-index: 10;
+            background: rgba(0, 0, 0, 0.8);
+            padding: 15px;
+            border-radius: 5px;
+            border: 1px solid #0f0;
+        }
+
+        .control-panel button {
+            background: #000;
+            color: #0f0;
+            border: 1px solid #0f0;
+            padding: 8px 16px;
+            margin: 5px;
+            cursor: pointer;
+            font-family: 'Ubuntu Mono', monospace;
+            border-radius: 3px;
+            transition: all 0.3s ease;
+        }
+
+        .control-panel button:hover {
+            background: #0f0;
+            color: #000;
+        }
+
+        .matrix-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px; /* Add spacing between matrices */
+            padding: 10px;
+        }
+
+        .matrix-item {
+            font-family: "Courier New", monospace; /* Ensure consistent character width */
+            font-size: 12px; /* Adjust as needed */
+            white-space: pre; /* Preserve spacing */
+            overflow: hidden; /* Prevent overflow */
+            word-break: break-all; /* Break long lines */
+            padding: 10px;
+            border: 1px solid #ccc; /* Visual boundary */
+            min-height: 100px; /* Minimum height */
+        }
+
+        .matrix-item {
+            width: fit-content;
+            max-width: 300px; /* Prevent excessive width */
+            overflow-wrap: break-word;
+            font-family: "Courier New", Consolas, monospace;
+            line-height: 1.2; /* Reduce line height for ASCII art */
+            margin: 15px; /* Add margin between items */
+        }
+
+        .matrices-container {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: space-around;
+            align-items: flex-start;
+            gap: 20px;
+        }
+
+        .matrix-wrapper {
+            flex: 0 0 auto; /* Don't grow or shrink */
+            min-width: 200px;
+            max-width: 400px;
+        }
+
+        .matrix-item {
+            font-size: clamp(8px, 2vw, 14px); /* Responsive font size */
+            font-family: "Courier New", monospace;
+        }
+
+        /* For larger screens */
+        @media (min-width: 768px) {
+            .matrix-item {
+                font-size: 10px;
+            }
+        }
+
+        /* For smaller screens */
+        @media (max-width: 480px) {
+            .matrix-item {
+                font-size: 8px;
+            }
+        }
+
+
+
+    </style>
+</head>
+<body>
+    <div class="control-panel">
+        <div style="margin: 10px 0;">
+            <label style="color: #0f0;">ASCII Art:</label><br>
+            <textarea id="customText" placeholder="Enter ASCII art (multi-line supported)" style="width: 300px; height: 80px; margin: 5px; padding: 5px; background: #000; color: #0f0; border: 1px solid #0f0; font-family: 'Ubuntu Mono', monospace; resize: vertical;">$$\   $$\  $$$$$$\   $$$$$$\  $$\   $$\  $$$$$$\  $$\      $$\   $$\ $$$$$$$\  
+$$ |  $$ |$$  __$$\ $$  __$$\ $$ | $$  |$$  __$$\ $$ |     $$ |  $$ |$$  __$$\ 
+$$ |  $$ |$$ /  $$ |$$ /  \__|$$ |$$  / $$ /  \__|$$ |     $$ |  $$ |$$ |  $$ |
+$$$$$$$$ |$$$$$$$$ |$$ |      $$$$$  /  $$ |      $$ |     $$ |  $$ |$$$$$$$\ |
+$$  __$$ |$$  __$$ |$$ |      $$  $$<   $$ |      $$ |     $$ |  $$ |$$  __$$\ 
+$$ |  $$ |$$ |  $$ |$$ |  $$\ $$ |\$$\  $$ |  $$\ $$ |     $$ |  $$ |$$ |  $$ |
+$$ |  $$ |$$ |  $$ |\$$$$$$  |$$ | \$$\ \$$$$$$  |$$$$$$$$\\$$$$$$  |$$$$$$$  |
+\__|  \__|\__|  \__| \______/ \__|  \__| \______/ \________|\______/ \_______/</textarea>
+        </div>
+        
+        <div style="margin: 10px 0;">
+            <label style="color: #0f0;">Matrix Width:</label>
+            <input type="number" id="matrixWidth" value="53" min="20" max="200" style="width: 60px; margin: 5px; padding: 3px; background: #000; color: #0f0; border: 1px solid #0f0;">
+            
+            <label style="color: #0f0;">Height:</label>
+            <input type="number" id="matrixHeight" value="28" min="10" max="100" style="width: 60px; margin: 5px; padding: 3px; background: #000; color: #0f0; border: 1px solid #0f0;">
+            
+            <label style="color: #0f0;">Padding:</label>
+            <input type="number" id="matrixPadding" value="15" min="5" max="50" style="width: 60px; margin: 5px; padding: 3px; background: #000; color: #0f0; border: 1px solid #0f0;">
+        </div>
+        
+        <div style="margin: 10px 0;">
+            <label style="color: #0f0;">Grid Layout:</label>
+            <select id="gridCols" style="width: 60px; margin: 5px; padding: 3px; background: #000; color: #0f0; border: 1px solid #0f0;">
+                <option value="1">1</option>
+                <option value="2">2</option>
+                <option value="3" selected>3</option>
+                <option value="4">4</option>
+                <option value="5">5</option>
+            </select>
+            <span style="color: #0f0;">x</span>
+            <select id="gridRows" style="width: 60px; margin: 5px; padding: 3px; background: #000; color: #0f0; border: 1px solid #0f0;">
+                <option value="1">1</option>
+                <option value="2" selected>2</option>
+                <option value="3">3</option>
+                <option value="4">4</option>
+                <option value="5">5</option>
+            </select>
+            
+            <label style="color: #0f0;">Total:</label>
+            <input type="number" id="totalMatrices" value="6" min="1" max="25" style="width: 60px; margin: 5px; padding: 3px; background: #000; color: #0f0; border: 1px solid #0f0;">
+        </div>
+        
+        <div style="margin: 10px 0;">
+            <button onclick="generateAll()">Generate All</button>
+            <button onclick="changeColors()">Change Colors</button>
+            <button onclick="downloadImage()">Download Image</button>
+        </div>
+    </div>
+
+    <div class="matrix-container" id="matrixContainer">
+        <!-- Grid items will be generated by JavaScript -->
+    </div>
+
+    <div class="signature">@nedimark, 2025</div>
+
+    <script>
+        // Color palette from the notebook
+        const htmlColors = [
+            "#FF0000", "#ff8700", "#ffd300", "#deff0a", 
+            "#a1ff0a", "#39ff14", "#00f59b", "#0aff99", 
+            "#0aefff", "#147df5", "#580aff", "#be0aff"
+        ];
+
+        let gridItems = [];
+        let currentMatrixColors = [];
+        let currentAsciiColors = [];
+
+        // Generate random characters
+        function generateRandomChar() {
+            const chars = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%^&*()_+-=[]{}|;:,.<>?~`';
+            return chars[Math.floor(Math.random() * chars.length)];
+        }
+
+        // Shuffle array
+        function shuffleArray(array) {
+            const newArray = [...array];
+            for (let i = newArray.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [newArray[i], newArray[j]] = [newArray[j], newArray[i]];
+            }
+            return newArray;
+        }
+
+        // Global dimensions to ensure all matrices are the same size
+        let globalMatrixDimensions = null;
+
+        // Create matrix with cutout - using the working logic from test file
+        function createMatrixWithCutout() {
+            const customText = document.getElementById('customText').value;
+            const artLines = customText.split('\n');
+            const artHeight = artLines.length;
+            const artWidth = Math.max(...artLines.map(line => line.length));
+            
+            // Use global dimensions if set, otherwise calculate them
+            let gridWidth, gridHeight, startRow, startCol;
+            
+            if (globalMatrixDimensions) {
+                gridWidth = globalMatrixDimensions.width;
+                gridHeight = globalMatrixDimensions.height;
+                startRow = globalMatrixDimensions.startRow;
+                startCol = globalMatrixDimensions.startCol;
+            } else {
+                // Calculate dimensions first time
+                const basePadding = parseInt(document.getElementById('matrixPadding').value) || 15;
+                const baseWidth = parseInt(document.getElementById('matrixWidth').value) || 53;
+                const baseHeight = parseInt(document.getElementById('matrixHeight').value) || 28;
+                
+                if (customText.trim()) {
+                    // Hug the art with padding
+                    gridWidth = Math.max(artWidth + (basePadding * 2), baseWidth);
+                    gridHeight = Math.max(artHeight + (basePadding * 2), baseHeight);
+                } else {
+                    // Use base dimensions
+                    gridWidth = baseWidth;
+                    gridHeight = baseHeight;
+                }
+                
+                startRow = Math.floor((gridHeight - artHeight) / 2);
+                startCol = Math.floor((gridWidth - artWidth) / 2);
+                
+                // Store global dimensions
+                globalMatrixDimensions = {
+                    width: gridWidth,
+                    height: gridHeight,
+                    startRow: startRow,
+                    startCol: startCol
+                };
+            }
+            
+            // Create HTML string with proper coloring
+            let htmlOutput = '';
+            
+            for (let row = 0; row < gridHeight; row++) {
+                let line = '';
+                
+                for (let col = 0; col < gridWidth; col++) {
+                    let char = '';
+                    let isAsciiChar = false;
+                    
+                    // Check if we're in the ASCII art area
+                    if (row >= startRow && row < startRow + artHeight) {
+                        const artLineIndex = row - startRow;
+                        const artLine = artLines[artLineIndex] || '';
+                        const artCol = col - startCol;
+                        
+                        if (artCol >= 0 && artCol < artLine.length) {
+                            // We're in the ASCII art area - use the art character
+                            char = artLine[artCol];
+                            isAsciiChar = true;
+                        } else {
+                            // Outside art area - use random character
+                            char = generateRandomChar();
+                        }
+                    } else {
+                        // Outside art rows - use random character
+                        char = generateRandomChar();
+                    }
+                    
+                    // Add colored span for different character types
+                    if (isAsciiChar) {
+                        line += `<span class="ascii-char">${char}</span>`;
+                    } else {
+                        line += `<span class="matrix-char">${char}</span>`;
+                    }
+                }
+                
+                htmlOutput += line + '\n';
+            }
+            
+            return htmlOutput;
+        }
+
+        // Generate all matrices
+        function generateAll() {
+            const container = document.getElementById('matrixContainer');
+            const totalMatrices = parseInt(document.getElementById('totalMatrices').value) || 6;
+            const gridCols = parseInt(document.getElementById('gridCols').value) || 3;
+            const gridRows = parseInt(document.getElementById('gridRows').value) || 2;
+            
+            // Reset global dimensions so they get recalculated
+            globalMatrixDimensions = null;
+            
+            // Clear existing items
+            container.innerHTML = '';
+            gridItems = [];
+            
+            // Calculate if matrices will fit in the desired layout
+            // First, create a test matrix to get dimensions
+            const testMatrix = createMatrixWithCutout();
+            const tempDiv = document.createElement('div');
+            tempDiv.className = 'grid-item';
+            tempDiv.innerHTML = testMatrix;
+            tempDiv.style.visibility = 'hidden';
+            tempDiv.style.position = 'absolute';
+            document.body.appendChild(tempDiv);
+            
+            const matrixWidth = tempDiv.offsetWidth;
+            document.body.removeChild(tempDiv);
+            
+            // Check if matrices will fit horizontally
+            const containerWidth = window.innerWidth - 80; // Account for padding
+            const maxMatricesPerRow = Math.floor(containerWidth / matrixWidth);
+            
+            // Adjust layout if matrices are too wide
+            let actualCols = Math.min(gridCols, maxMatricesPerRow, totalMatrices);
+            if (actualCols < gridCols) {
+                console.log(`Matrices too wide for ${gridCols} columns, using ${actualCols} columns instead`);
+            }
+            
+            // Generate colors for all matrices
+            currentMatrixColors = [];
+            currentAsciiColors = [];
+            
+            for (let i = 0; i < totalMatrices; i++) {
+                const matrixColor = htmlColors[Math.floor(Math.random() * htmlColors.length)];
+                let asciiColor = htmlColors[Math.floor(Math.random() * htmlColors.length)];
+                
+                // Ensure different colors
+                while (asciiColor === matrixColor) {
+                    asciiColor = htmlColors[Math.floor(Math.random() * htmlColors.length)];
+                }
+                
+                currentMatrixColors.push(matrixColor);
+                currentAsciiColors.push(asciiColor);
+            }
+            
+            // Create matrices with flex-basis to control layout
+            for (let i = 0; i < totalMatrices; i++) {
+                const gridItem = document.createElement('div');
+                gridItem.className = 'grid-item';
+                
+                // Set flex properties to ensure proper layout
+                gridItem.style.flexBasis = `${100 / actualCols}%`;
+                gridItem.style.flexShrink = '0';
+                gridItem.style.flexGrow = '0';
+                gridItem.style.boxSizing = 'border-box';
+                
+                // Force line break after every actualCols items
+                if (i > 0 && i % actualCols === 0) {
+                    gridItem.style.marginTop = '0';
+                }
+                
+                const matrix = createMatrixWithCutout();
+                gridItem.innerHTML = matrix;
+                
+                // Set colors
+                gridItem.style.setProperty('--matrix-color', currentMatrixColors[i]);
+                gridItem.style.setProperty('--ascii-color', currentAsciiColors[i]);
+                
+                container.appendChild(gridItem);
+                gridItems.push(gridItem);
+            }
+        }
+
+        // Change colors
+        function changeColors() {
+            for (let i = 0; i < gridItems.length; i++) {
+                const matrixColor = htmlColors[Math.floor(Math.random() * htmlColors.length)];
+                let asciiColor = htmlColors[Math.floor(Math.random() * htmlColors.length)];
+                
+                // Ensure different colors
+                while (asciiColor === matrixColor) {
+                    asciiColor = htmlColors[Math.floor(Math.random() * htmlColors.length)];
+                }
+                
+                gridItems[i].style.setProperty('--matrix-color', matrixColor);
+                gridItems[i].style.setProperty('--ascii-color', asciiColor);
+            }
+        }
+
+        // Download as image
+        function downloadImage() {
+                const canvas = document.createElement('canvas');
+                const ctx = canvas.getContext('2d');
+                
+                // Calculate required dimensions based on content
+                const matrixElements = document.querySelectorAll('.matrix-item');
+                let totalWidth = 0;
+                let maxHeight = 0;
+                
+                matrixElements.forEach(element => {
+                    const rect = element.getBoundingClientRect();
+                    totalWidth += rect.width + 40; // Add padding
+                    maxHeight = Math.max(maxHeight, rect.height);
+                });
+                
+                canvas.width = totalWidth;
+                canvas.height = maxHeight + 40; // Add top/bottom padding
+            const container = document.getElementById('matrixContainer');
+            
+            html2canvas(container, {
+                backgroundColor: '#000000',
+                allowTaint: true,
+                useCORS: true,
+                scale: 1,
+                logging: false,
+                removeContainer: true
+            }).then(canvas => {
+                const link = document.createElement('a');
+                link.download = 'ascii-matrix-art.png';
+                link.href = canvas.toDataURL('image/png');
+                link.click();
+            }).catch(error => {
+                console.error('Error generating image:', error);
+                // Fallback method
+                window.print();
+            });
+        }
+
+        // Update total matrices when grid changes
+        document.getElementById('gridCols').addEventListener('change', updateTotal);
+        document.getElementById('gridRows').addEventListener('change', updateTotal);
+        
+        function updateTotal() {
+            const cols = parseInt(document.getElementById('gridCols').value);
+            const rows = parseInt(document.getElementById('gridRows').value);
+            document.getElementById('totalMatrices').value = cols * rows;
+        }
+
+        // Keyboard controls
+        document.addEventListener('keydown', (e) => {
+            switch(e.key.toLowerCase()) {
+                case 'c':
+                    changeColors();
+                    break;
+                case 'g':
+                    generateAll();
+                    break;
+            }
+        });
+
+        // Initialize everything when page loads
+        window.addEventListener('load', () => {
+            generateAll();
+        });
+    </script>
+    
+    <!-- Add html2canvas for image download functionality -->
+    <script src="https://html2canvas.hertzen.com/dist/html2canvas.min.js"></script>
+</body>
+</html>

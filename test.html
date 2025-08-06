@@ -1,0 +1,465 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ASCII Matrix Art Generator - No Overlap</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 15px;
+            padding: 30px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+        }
+
+        h1 {
+            text-align: center;
+            color: #333;
+            margin-bottom: 30px;
+            font-size: clamp(1.8rem, 4vw, 2.5rem);
+        }
+
+        /* Control Panel Styles */
+        .controls {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+            padding: 20px;
+            background: #f8f9fa;
+            border-radius: 10px;
+            border: 2px solid #e9ecef;
+        }
+
+        .control-group {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .control-group label {
+            font-weight: 600;
+            margin-bottom: 8px;
+            color: #495057;
+        }
+
+        .control-group input, .control-group select {
+            padding: 8px 12px;
+            border: 2px solid #dee2e6;
+            border-radius: 6px;
+            font-size: 14px;
+            transition: border-color 0.3s;
+        }
+
+        .control-group input:focus, .control-group select:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .button-group {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+
+        button {
+            background: linear-gradient(45deg, #667eea, #764ba2);
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.3s;
+            font-size: 14px;
+        }
+
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+        }
+
+        /* Matrix Grid - THE KEY FIX */
+        .matrix-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 25px;
+            padding: 20px;
+            justify-items: center;
+            align-items: start;
+        }
+
+        /* Individual Matrix Container - PREVENTS OVERLAP */
+        .matrix-container {
+            width: 100%;
+            max-width: 400px;
+            min-height: 200px;
+            background: #ffffff;
+            border: 2px solid #e9ecef;
+            border-radius: 10px;
+            padding: 20px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+            overflow: hidden; /* KEY: Prevents content overflow */
+            position: relative;
+        }
+
+        /* ASCII Art Styling - MONOSPACE FONT CRITICAL */
+        .matrix-content {
+            font-family: "Courier New", "DejaVu Sans Mono", "Liberation Mono", Consolas, monospace;
+            font-size: clamp(6px, 1.2vw, 10px); /* Responsive font size */
+            line-height: 1.1;
+            white-space: pre;
+            word-break: break-all;
+            overflow-wrap: break-word;
+            color: #2d3748;
+            background: #f7fafc;
+            padding: 15px;
+            border-radius: 6px;
+            border: 1px solid #e2e8f0;
+            max-height: 300px;
+            overflow-y: auto; /* Scrollable if content too large */
+        }
+
+        /* Matrix Header */
+        .matrix-header {
+            text-align: center;
+            font-weight: 600;
+            color: #4a5568;
+            margin-bottom: 10px;
+            font-size: 14px;
+        }
+
+        /* Color Themes */
+        .theme-default { color: #2d3748; background: #f7fafc; }
+        .theme-matrix { color: #00ff00; background: #001100; }
+        .theme-blue { color: #3182ce; background: #ebf8ff; }
+        .theme-purple { color: #805ad5; background: #faf5ff; }
+        .theme-red { color: #e53e3e; background: #fed7d7; }
+
+        /* Responsive Design */
+        @media (max-width: 768px) {
+            .container {
+                padding: 15px;
+            }
+            
+            .matrix-grid {
+                grid-template-columns: 1fr;
+                gap: 15px;
+                padding: 10px;
+            }
+            
+            .matrix-container {
+                max-width: 100%;
+                padding: 15px;
+            }
+            
+            .matrix-content {
+                font-size: 8px;
+                padding: 10px;
+                max-height: 250px;
+            }
+            
+            .controls {
+                grid-template-columns: 1fr;
+                gap: 15px;
+                padding: 15px;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .matrix-content {
+                font-size: 6px;
+                line-height: 1.0;
+            }
+            
+            .button-group {
+                flex-direction: column;
+            }
+            
+            button {
+                width: 100%;
+            }
+        }
+
+        /* Download Canvas Styles */
+        #downloadCanvas {
+            display: none;
+        }
+
+        /* Loading Animation */
+        .loading {
+            display: none;
+            text-align: center;
+            padding: 20px;
+        }
+
+        .spinner {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #667eea;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 10px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>ASCII Matrix Art Generator</h1>
+        
+        <div class="controls">
+            <div class="control-group">
+                <label for="matrixWidth">Matrix Width:</label>
+                <input type="number" id="matrixWidth" min="2" max="8" value="3">
+            </div>
+            
+            <div class="control-group">
+                <label for="matrixHeight">Matrix Height:</label>
+                <input type="number" id="matrixHeight" min="2" max="8" value="3">
+            </div>
+            
+            <div class="control-group">
+                <label for="matrixPadding">Padding:</label>
+                <input type="number" id="matrixPadding" min="5" max="50" value="10">
+            </div>
+            
+            <div class="control-group">
+                <label for="gridColumns">Grid Columns:</label>
+                <input type="number" id="gridColumns" min="1" max="5" value="3">
+            </div>
+            
+            <div class="control-group">
+                <label for="gridRows">Grid Rows:</label>
+                <input type="number" id="gridRows" min="1" max="5" value="3">
+            </div>
+            
+            <div class="control-group">
+                <label for="colorTheme">Color Theme:</label>
+                <select id="colorTheme">
+                    <option value="default">Default</option>
+                    <option value="matrix">Matrix Green</option>
+                    <option value="blue">Ocean Blue</option>
+                    <option value="purple">Purple</option>
+                    <option value="red">Red</option>
+                </select>
+            </div>
+        </div>
+        
+        <div class="button-group">
+            <button onclick="generateMatrices()">Generate All</button>
+            <button onclick="changeColors()">Change Colors</button>
+            <button onclick="downloadImage()">Download Image</button>
+            <button onclick="clearAll()">Clear All</button>
+        </div>
+        
+        <div class="loading" id="loading">
+            <div class="spinner"></div>
+            <p>Generating matrices...</p>
+        </div>
+        
+        <div class="matrix-grid" id="matrixGrid">
+            <!-- Matrices will be generated here -->
+        </div>
+        
+        <canvas id="downloadCanvas"></canvas>
+    </div>
+
+    <script>
+        // Matrix generation functions
+        function generateRandomMatrix(width, height) {
+            const matrix = [];
+            for (let i = 0; i < height; i++) {
+                const row = [];
+                for (let j = 0; j < width; j++) {
+                    row.push(Math.floor(Math.random() * 10));
+                }
+                matrix.push(row);
+            }
+            return matrix;
+        }
+
+        function matrixToASCII(matrix) {
+            let ascii = '';
+            const padding = parseInt(document.getElementById('matrixPadding').value);
+            
+            // Add top border
+            ascii += '┌' + '─'.repeat(matrix[0].length * 4 + 1) + '┐\n';
+            
+            // Add matrix content
+            for (let i = 0; i < matrix.length; i++) {
+                ascii += '│ ';
+                for (let j = 0; j < matrix[i].length; j++) {
+                    ascii += matrix[i][j].toString().padStart(2) + ' ';
+                }
+                ascii += '│\n';
+            }
+            
+            // Add bottom border
+            ascii += '└' + '─'.repeat(matrix[0].length * 4 + 1) + '┘';
+            
+            return ascii;
+        }
+
+        function generateMatrices() {
+            const loading = document.getElementById('loading');
+            const grid = document.getElementById('matrixGrid');
+            
+            loading.style.display = 'block';
+            grid.innerHTML = '';
+            
+            setTimeout(() => {
+                const width = parseInt(document.getElementById('matrixWidth').value);
+                const height = parseInt(document.getElementById('matrixHeight').value);
+                const cols = parseInt(document.getElementById('gridColumns').value);
+                const rows = parseInt(document.getElementById('gridRows').value);
+                const theme = document.getElementById('colorTheme').value;
+                
+                // Update grid columns based on user input
+                grid.style.gridTemplateColumns = `repeat(${cols}, minmax(300px, 1fr))`;
+                
+                const totalMatrices = cols * rows;
+                
+                for (let i = 0; i < totalMatrices; i++) {
+                    const matrix = generateRandomMatrix(width, height);
+                    const ascii = matrixToASCII(matrix);
+                    
+                    const matrixContainer = document.createElement('div');
+                    matrixContainer.className = 'matrix-container';
+                    
+                    const header = document.createElement('div');
+                    header.className = 'matrix-header';
+                    header.textContent = `Matrix ${i + 1} (${width}×${height})`;
+                    
+                    const content = document.createElement('div');
+                    content.className = `matrix-content theme-${theme}`;
+                    content.textContent = ascii;
+                    
+                    matrixContainer.appendChild(header);
+                    matrixContainer.appendChild(content);
+                    grid.appendChild(matrixContainer);
+                }
+                
+                loading.style.display = 'none';
+            }, 100);
+        }
+
+        function changeColors() {
+            const theme = document.getElementById('colorTheme').value;
+            const contents = document.querySelectorAll('.matrix-content');
+            
+            contents.forEach(content => {
+                content.className = `matrix-content theme-${theme}`;
+            });
+        }
+
+        function clearAll() {
+            document.getElementById('matrixGrid').innerHTML = '';
+        }
+
+        function downloadImage() {
+            const canvas = document.getElementById('downloadCanvas');
+            const ctx = canvas.getContext('2d');
+            const containers = document.querySelectorAll('.matrix-container');
+            
+            if (containers.length === 0) {
+                alert('Please generate matrices first!');
+                return;
+            }
+            
+            // Calculate canvas dimensions to prevent overlap
+            const cols = parseInt(document.getElementById('gridColumns').value);
+            const containerWidth = 400;
+            const containerHeight = 300;
+            const spacing = 30;
+            
+            const rows = Math.ceil(containers.length / cols);
+            canvas.width = cols * (containerWidth + spacing) - spacing;
+            canvas.height = rows * (containerHeight + spacing) - spacing;
+            
+            // Set background
+            ctx.fillStyle = '#ffffff';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            
+            // Set font for ASCII art
+            ctx.font = '10px "Courier New", monospace';
+            ctx.textAlign = 'left';
+            ctx.textBaseline = 'top';
+            
+            containers.forEach((container, index) => {
+                const row = Math.floor(index / cols);
+                const col = index % cols;
+                const x = col * (containerWidth + spacing);
+                const y = row * (containerHeight + spacing);
+                
+                // Draw container background
+                ctx.fillStyle = '#ffffff';
+                ctx.fillRect(x, y, containerWidth, containerHeight);
+                
+                // Draw border
+                ctx.strokeStyle = '#e9ecef';
+                ctx.lineWidth = 2;
+                ctx.strokeRect(x, y, containerWidth, containerHeight);
+                
+                // Draw header
+                const header = container.querySelector('.matrix-header').textContent;
+                ctx.fillStyle = '#4a5568';
+                ctx.font = 'bold 14px Arial, sans-serif';
+                ctx.fillText(header, x + 20, y + 20);
+                
+                // Draw ASCII content
+                const content = container.querySelector('.matrix-content').textContent;
+                const theme = container.querySelector('.matrix-content').classList[1];
+                
+                ctx.font = '8px "Courier New", monospace';
+                
+                // Set color based on theme
+                switch(theme) {
+                    case 'theme-matrix': ctx.fillStyle = '#00ff00'; break;
+                    case 'theme-blue': ctx.fillStyle = '#3182ce'; break;
+                    case 'theme-purple': ctx.fillStyle = '#805ad5'; break;
+                    case 'theme-red': ctx.fillStyle = '#e53e3e'; break;
+                    default: ctx.fillStyle = '#2d3748';
+                }
+                
+                const lines = content.split('\n');
+                lines.forEach((line, lineIndex) => {
+                    ctx.fillText(line, x + 20, y + 50 + lineIndex * 10);
+                });
+            });
+            
+            // Download the image
+            const link = document.createElement('a');
+            link.download = 'ascii-matrices.png';
+            link.href = canvas.toDataURL();
+            link.click();
+        }
+
+        // Generate initial matrices
+        window.onload = function() {
+            generateMatrices();
+        };
+    </script>
+</body>
+</html>

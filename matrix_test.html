@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Single Matrix Test</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Ubuntu+Mono:wght@400;700&display=swap');
+        
+        body {
+            margin: 0;
+            padding: 20px;
+            background-color: #000;
+            font-family: 'Ubuntu Mono', monospace;
+            color: #0f0;
+        }
+
+        .matrix-display {
+            font-size: 12px;
+            line-height: 1.2;
+            white-space: pre;
+            border: 1px solid #333;
+            padding: 15px;
+            background: #000;
+            width: fit-content;
+            margin: 20px auto;
+        }
+
+        .matrix-char {
+            color: var(--matrix-color, #0f0);
+        }
+
+        .ascii-char {
+            color: var(--ascii-color, #ff0000);
+            font-weight: bold;
+        }
+
+        .controls {
+            text-align: center;
+            margin: 20px;
+        }
+
+        button {
+            background: #000;
+            color: #0f0;
+            border: 1px solid #0f0;
+            padding: 10px 20px;
+            margin: 5px;
+            cursor: pointer;
+            font-family: 'Ubuntu Mono', monospace;
+        }
+
+        button:hover {
+            background: #0f0;
+            color: #000;
+        }
+
+        input, textarea {
+            background: #000;
+            color: #0f0;
+            border: 1px solid #0f0;
+            padding: 8px;
+            margin: 5px;
+            font-family: 'Ubuntu Mono', monospace;
+            width: 300px;
+        }
+
+        textarea {
+            height: 100px;
+            resize: vertical;
+            white-space: pre;
+        }
+    </style>
+</head>
+<body>
+    <div class="controls">
+        <textarea id="customText" placeholder="Enter ASCII art (multi-line supported)">     |\__/,|   (`\
+  _.|o o  |_   ) )
+-(((---(((--------</textarea>
+        <br>
+        <button onclick="generateMatrix()">Generate Matrix</button>
+        <button onclick="changeColor()">Change Color</button>
+        <button onclick="loadHackclub()">Load HACKCLUB</button>
+    </div>
+
+    <div class="matrix-display" id="matrixDisplay">
+        <!-- Matrix will be generated here -->
+    </div>
+
+    <script>
+        const colors = [
+            "#FF0000", "#ff8700", "#ffd300", "#deff0a", 
+            "#a1ff0a", "#39ff14", "#00f59b", "#0aff99", 
+            "#0aefff", "#147df5", "#580aff", "#be0aff"
+        ];
+
+        let currentMatrixColor = "#39ff14";
+        let currentAsciiColor = "#FF0000";
+
+        // Default ASCII art
+        const defaultArt = `$$\\   $$\\  $$$$$$\\   $$$$$$\\  $$\\   $$\\  $$$$$$\\  $$\\      $$\\   $$\\ $$$$$$$\\  
+$$ |  $$ |$$  __$$\\ $$  __$$\\ $$ | $$  |$$  __$$\\ $$ |     $$ |  $$ |$$  __$$\\ 
+$$ |  $$ |$$ /  $$ |$$ /  \\__|$$ |$$  / $$ /  \\__|$$ |     $$ |  $$ |$$ |  $$ |
+$$$$$$$$ |$$$$$$$$ |$$ |      $$$$$  /  $$ |      $$ |     $$ |  $$ |$$$$$$$\\ |
+$$  __$$ |$$  __$$ |$$ |      $$  $$<   $$ |      $$ |     $$ |  $$ |$$  __$$\\ 
+$$ |  $$ |$$ |  $$ |$$ |  $$\\ $$ |\\$$\\  $$ |  $$\\ $$ |     $$ |  $$ |$$ |  $$ |
+$$ |  $$ |$$ |  $$ |\\$$$$$$  |$$ | \\$$\\ \\$$$$$$  |$$$$$$$$\\\\$$$$$$  |$$$$$$$  |
+\\__|  \\__|\\__|  \\__| \\______/ \\__|  \\__| \\______/ \\________|\\______/ \\_______/`;
+
+        function generateRandomChar() {
+            const chars = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%^&*()_+-=[]{}|;:,.<>?~`';
+            return chars[Math.floor(Math.random() * chars.length)];
+        }
+
+        function createMatrixWithCutout() {
+            const customText = document.getElementById('customText').value || defaultArt;
+            const artLines = customText.split('\n');
+            const artHeight = artLines.length;
+            const artWidth = Math.max(...artLines.map(line => line.length));
+            
+            // Calculate matrix dimensions to hug the art with padding
+            const padding = 15; // Characters of padding on each side
+            const gridWidth = artWidth + (padding * 2);
+            const gridHeight = artHeight + (padding * 2);
+            
+            // Calculate position with padding
+            const startRow = padding;
+            const startCol = padding;
+            
+            console.log(`Art dimensions: ${artWidth}x${artHeight}`);
+            console.log(`Grid dimensions: ${gridWidth}x${gridHeight}`);
+            console.log(`Start position: row=${startRow}, col=${startCol}`);
+            
+            // Create HTML string with proper coloring
+            let htmlOutput = '';
+            
+            for (let row = 0; row < gridHeight; row++) {
+                let line = '';
+                
+                for (let col = 0; col < gridWidth; col++) {
+                    let char = '';
+                    let isAsciiChar = false;
+                    
+                    // Check if we're in the ASCII art area
+                    if (row >= startRow && row < startRow + artHeight) {
+                        const artLineIndex = row - startRow;
+                        const artLine = artLines[artLineIndex] || '';
+                        const artCol = col - startCol;
+                        
+                        if (artCol >= 0 && artCol < artLine.length) {
+                            // We're in the ASCII art area - use the art character
+                            char = artLine[artCol];
+                            isAsciiChar = true;
+                        } else {
+                            // Outside art area - use random character
+                            char = generateRandomChar();
+                        }
+                    } else {
+                        // Outside art rows - use random character
+                        char = generateRandomChar();
+                    }
+                    
+                    // Add colored span for different character types
+                    if (isAsciiChar) {
+                        line += `<span class="ascii-char">${char}</span>`;
+                    } else {
+                        line += `<span class="matrix-char">${char}</span>`;
+                    }
+                }
+                
+                htmlOutput += line + '\n';
+            }
+            
+            return htmlOutput;
+        }
+
+        function generateMatrix() {
+            const matrix = createMatrixWithCutout();
+            const display = document.getElementById('matrixDisplay');
+            display.innerHTML = matrix; // Use innerHTML for colored spans
+            
+            // Update CSS custom properties for colors
+            display.style.setProperty('--matrix-color', currentMatrixColor);
+            display.style.setProperty('--ascii-color', currentAsciiColor);
+        }
+
+        function changeColor() {
+            currentMatrixColor = colors[Math.floor(Math.random() * colors.length)];
+            currentAsciiColor = colors[Math.floor(Math.random() * colors.length)];
+            
+            // Make sure they're different colors
+            if (currentMatrixColor === currentAsciiColor) {
+                currentAsciiColor = colors[(colors.indexOf(currentMatrixColor) + 1) % colors.length];
+            }
+            
+            const display = document.getElementById('matrixDisplay');
+            display.style.setProperty('--matrix-color', currentMatrixColor);
+            display.style.setProperty('--ascii-color', currentAsciiColor);
+        }
+
+        function loadHackclub() {
+            document.getElementById('customText').value = defaultArt;
+            generateMatrix();
+        }
+
+        // Generate initial matrix
+        window.addEventListener('load', generateMatrix);
+    </script>
+</body>
+</html>
