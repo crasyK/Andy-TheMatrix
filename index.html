@@ -95,7 +95,7 @@
         }
 
         textarea {
-            resize: vertical;
+            resize: both;
             white-space: pre;
         }
     </style>
@@ -104,7 +104,7 @@
     <div class="control-panel">
         <div style="margin: 10px 0;">
             <label style="color: #0f0;">ASCII Art:</label><br>
-            <textarea id="customText" placeholder="Enter ASCII art (multi-line supported)" style="width: 280px; height: 80px;">$$\   $$\  $$$$$$\   $$$$$$\  $$\   $$\  $$$$$$\  $$\      $$\   $$\ $$$$$$$\  
+            <textarea id="customText" placeholder="Enter ASCII art (multi-line supported)" style="width: 280px; height: 80px; resize: both;">$$\   $$\  $$$$$$\   $$$$$$\  $$\   $$\  $$$$$$\  $$\      $$\   $$\ $$$$$$$\  
 $$ |  $$ |$$  __$$\ $$  __$$\ $$ | $$  |$$  __$$\ $$ |     $$ |  $$ |$$  __$$\ 
 $$ |  $$ |$$ /  $$ |$$ /  \__|$$ |$$  / $$ /  \__|$$ |     $$ |  $$ |$$ |  $$ |
 $$$$$$$$ |$$$$$$$$ |$$ |      $$$$$  /  $$ |      $$ |     $$ |  $$ |$$$$$$$\ |
@@ -235,10 +235,10 @@ $$ |  $$ |$$ |  $$ |\$$$$$$  |$$ | \$$\ \$$$$$$  |$$$$$$$$\\$$$$$$  |$$$$$$$  |
                 startCol = Math.max(0, Math.floor((gridWidth - artWidth) / 2));
             } else if (padding === 0) {
                 // Exact fit - no padding
-                gridWidth = Math.max(artWidth, 20); // Minimum width
-                gridHeight = Math.max(artHeight, 10); // Minimum height
-                startRow = Math.max(0, Math.floor((gridHeight - artHeight) / 2));
-                startCol = Math.max(0, Math.floor((gridWidth - artWidth) / 2));
+                gridWidth = artWidth; // Match art width exactly
+                gridHeight = artHeight; // Match art height exactly
+                startRow = 0; // Start at the top
+                startCol = 0; // Start at the left
             } else {
                 // Use padding to hug the art
                 gridWidth = artWidth + (padding * 2);
@@ -331,7 +331,10 @@ $$ |  $$ |$$ |  $$ |\$$$$$$  |$$ | \$$\ \$$$$$$  |$$$$$$$$\\$$$$$$  |$$$$$$$  |
                 }
                 
                 container.appendChild(matrixRow);
-            }
+            }   
+            
+            // Ensure the custom background color is applied
+            updateBackground();
         }
 
         // Change colors
