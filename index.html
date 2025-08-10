@@ -156,6 +156,7 @@ $$ |  $$ |$$ |  $$ |\$$$$$$  |$$ | \$$\ \$$$$$$  |$$$$$$$$\\$$$$$$  |$$$$$$$  |
                 <option value="fire">Fire</option>
                 <option value="ocean">Ocean</option>
                 <option value="cyberpunk">Cyberpunk</option>
+                <option value="custom">Custom</option>
             </select>
             
             <button onclick="randomizePalette()" style="font-size: 10px; padding: 4px 8px;">Random</button>
@@ -175,6 +176,13 @@ $$ |  $$ |$$ |  $$ |\$$$$$$  |$$ | \$$\ \$$$$$$  |$$$$$$$$\\$$$$$$  |$$$$$$$  |
         
         <div style="margin: 10px 0;">
             <button onclick="loadHackclub()" style="font-size: 10px; padding: 4px 8px;">Load HACKCLUB</button>
+        </div>
+        
+        <!-- Add a custom color palette input section -->
+        <div style="margin: 10px 0;" id="customPaletteSection" hidden>
+            <label style="color: #0f0;">Custom Palette (comma-separated hex codes):</label><br>
+            <textarea id="customPaletteInput" placeholder="#ff0000, #00ff00, #0000ff" style="width: 280px; height: 60px;"></textarea>
+            <button onclick="applyCustomPalette()" style="font-size: 10px; padding: 4px 8px;">Apply</button>
         </div>
     </div>
 
@@ -342,11 +350,31 @@ $$ |  $$ |$$ |  $$ |\$$$$$$  |$$ | \$$\ \$$$$$$  |$$$$$$$$\\$$$$$$  |$$$$$$$  |
             }
         }
 
-        // Update color palette
+        // Update palette function to handle "Custom" option
         function updatePalette() {
             const selected = document.getElementById('colorPalette').value;
-            currentPalette = colorPalettes[selected];
-            changeColors(); // Apply new palette immediately
+            if (selected === 'custom') {
+                document.getElementById('customPaletteSection').hidden = false;
+            } else {
+                document.getElementById('customPaletteSection').hidden = true;
+                currentPalette = colorPalettes[selected];
+                changeColors(); // Apply new palette immediately
+            }
+        }
+
+        // Apply custom palette
+        function applyCustomPalette() {
+            const input = document.getElementById('customPaletteInput').value;
+            const hexCodes = input.split(',').map(code => code.trim());
+            const validHex = /^#[0-9A-F]{6}$/i;
+
+            // Validate hex codes
+            if (hexCodes.every(code => validHex.test(code))) {
+                currentPalette = hexCodes;
+                changeColors(); // Apply custom palette
+            } else {
+                alert('Invalid hex codes. Please enter valid hex color codes separated by commas.');
+            }
         }
 
         // Randomize palette
